@@ -1,0 +1,139 @@
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
+
+class Bike {
+  id: string;
+  availability: boolean;
+
+  constructor() {
+    this.id = crypto.randomUUID();
+    this.availability = true;
+  }
+}
+
+class User {
+  id: string;
+  email: string;
+  password: string;
+  passwordHash: string;
+
+  constructor(email: string, password: string) {
+    this.id = crypto.randomUUID();
+    this.email = email;
+    this.password = password;
+    this.passwordHash = '';
+  }
+
+  setPassword(password: string): void {
+    const saltRounds = 10;
+    this.passwordHash = bcrypt.hashSync(password, saltRounds);
+  }
+
+  checkPassword(password: string): boolean {
+    return bcrypt.compareSync(password, this.passwordHash);
+  }
+}
+
+class App {
+  users: User[] = [];
+  bikes: Bike[] = [];
+
+  addUser(user: User): void {
+    if (this.users.some(existingUser => existingUser.email === user.email)) {
+      throw new Error('Email já existente.');
+    }
+    user.setPassword(user.password);
+    this.users.push(user);
+  }
+
+  findUser(email: string): User | undefined {
+    return this.users.find(user => user.email === email);
+  }
+
+  authenticateUser(email: string, password: string): User | undefined {
+    const user = this.findUser(email);
+    if (user && user.checkPassword(password)) {
+      return user;
+    }
+    return undefined;
+  }
+
+  registerBike(): void {
+    const bike = new Bike();
+    this.bikes.push(bike);
+  }
+
+  removeUser(user: User): void {
+    this.users = this.users.filter(existingUser => existingUser.id !== user.id);
+  }
+
+  listUsers(): User[] {
+    return this.users;
+  }
+
+  listBikes(): Bike[] {
+    return this.bikes;
+  }
+
+  rentBike(userId: string, bikeId: string): Bike | undefined {
+    const user = this.findUser(userId);
+    const bike = this.bikes.find(bike => bike.id === bikeId);
+
+    if (!user || !bike) {
+      return undefined;
+    }
+
+    if (!bike.availability) {
+      throw new Error('Bike is not available for rent.');
+    }
+
+    bike.availability = false;
+    return bike;
+  }
+
+  returnBike(bikeId: string): number | undefined {
+    const bike = this.bikes.find(bike => bike.id === bikeId);
+
+    if (!bike) {
+      return undefined;
+    }
+
+    if (bike.availability) {
+      throw new Error('Bike is already available.');
+    }
+
+    bike.availability = true;
+    return 50; 
+  }
+}
+
+const app = new App();
+
+const user1 = new User('user1@example.com', 'password1');
+app.addUser(user1);
+
+const authenticatedUser = app.authenticateUser('user1@example.com', 'password1');
+if (authenticatedUser) {
+  console.log('User authenticated:', authenticatedUser.email);
+} else {
+  console.log('Authentication failed.');
+}
+
+app.registerBike();
+const bikesList = app.listBikes();
+console.log('Bikes:', bikesList);
+
+const rentedBike = app.rentBike(user1.id, bikesList[0].id);
+if (rentedBike) {
+  console.log('Bike rented:', rentedBike.id);
+} else {
+  console.log('Rental failed.');
+}
+
+const returnedBikeId = rentedBike ? rentedBike.id : '';
+const rentalFee = app.returnBike(returnedBikeId);
+if (rentalFee !== undefined) {
+  console.log('Bike returned. Rental fee:', rentalFee);
+} else {
+  console.log('Return failed.');
+}

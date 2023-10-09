@@ -1,1 +1,81 @@
+class Bicicleta {
+  constructor(public id: number, public modelo: string, public disponivel: boolean = true) {}
+}
 
+class Usuario {
+  constructor(public id: number, public nome: string) {}
+}
+
+class Aluguel {
+  constructor(public usuario: Usuario, public bicicleta: Bicicleta, public dataAluguel: Date, public dataDevolucao?: Date) {}
+}
+
+class SistemaAluguelBicicletas {
+  private bicicletas: Bicicleta[] = [];
+  private usuarios: Usuario[] = [];
+  private alugueis: Aluguel[] = [];
+
+  //cria nova instância de bicicleta
+  static criarBicicleta(id: number, modelo: string): Bicicleta {
+    const bicicleta = new Bicicleta(id, modelo);
+    return bicicleta;
+  }
+
+  //cria nova instância de usuario
+  static criarUsuario(id: number, nome: string): Usuario {
+    const usuario = new Usuario(id, nome);
+    return usuario;
+  }
+
+  alugarBicicleta(idUsuario: number, idBicicleta: number): void {
+    const usuario = this.usuarios.find(u => u.id === idUsuario);
+    const bicicleta = this.bicicletas.find(b => b.id === idBicicleta);
+
+    if (!usuario || !bicicleta) {
+      console.log("Usuário ou bicicleta não encontrado.");
+      return;
+    }
+
+    if (!bicicleta.disponivel) {
+      console.log("Bicicleta não está disponível para aluguel.");
+      return;
+    }
+
+    bicicleta.disponivel = false;
+    const aluguel = new Aluguel(usuario, bicicleta, new Date());
+    this.alugueis.push(aluguel);
+    console.log(`Bicicleta alugada para ${usuario.nome}.`);
+  }
+
+  devolverBicicleta(idBicicleta: number): void {
+    const bicicleta = this.bicicletas.find(b => b.id === idBicicleta);
+
+    if (!bicicleta) {
+      console.log("Bicicleta não encontrada.");
+      return;
+    }
+
+    const aluguel = this.alugueis.find(a => a.bicicleta.id === idBicicleta && !a.dataDevolucao);
+
+    if (!aluguel) {
+      console.log("Não há aluguel ativo para esta bicicleta.");
+      return;
+    }
+
+    bicicleta.disponivel = true;
+    aluguel.dataDevolucao = new Date();
+    console.log(`Bicicleta devolvida por ${aluguel.usuario.nome}.`);
+  }
+}
+
+
+const sistemaAluguel = new SistemaAluguelBicicletas();
+
+//cria bicicletas e um usuário
+const bicicleta1 = SistemaAluguelBicicletas.criarBicicleta(1, "Bicicleta 1");
+const bicicleta2 = SistemaAluguelBicicletas.criarBicicleta(2, "Bicicleta 2");
+const usuario1 = SistemaAluguelBicicletas.criarUsuario(1, "Usuário");
+
+//aluga e devolve uma bicicleta
+sistemaAluguel.alugarBicicleta(usuario1.id, bicicleta1.id);
+sistemaAluguel.devolverBicicleta(bicicleta1.id);

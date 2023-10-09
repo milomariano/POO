@@ -1,3 +1,5 @@
+//Código de Joao Pedro Mariano, RA 148212
+
 import * as crypto from 'crypto';
 import { Bike } from './bike';
 import { Rent } from './rent';

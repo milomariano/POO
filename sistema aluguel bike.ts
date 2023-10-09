@@ -1,3 +1,4 @@
+//Código de Joao Pedro Mariano, RA 148212
 class Bicicleta {
   constructor(public id: number, public modelo: string, public disponivel: boolean = true) {}
 }

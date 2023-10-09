@@ -1,3 +1,4 @@
+//Código de Joao Pedro Mariano, RA 148212
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 

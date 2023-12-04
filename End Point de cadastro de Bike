@@ -1,0 +1,65 @@
+import express from 'express'
+import bodyParser from 'body-parser'
+import { Request, Response, NextFunction } from 'express'
+import { App } from './app'
+import { PrismaUserRepo } from './external/database/prisma-user-repo'
+import { PrismaBikeRepo } from './external/database/prisma-bike-repo'
+import { PrismaRentRepo } from './external/database/prisma-rent-repo'
+import { DuplicateUserError } from './errors/duplicate-user-error'
+
+const cors = (req: Request, res: Response, next: NextFunction): void => {
+    res.set('access-control-allow-origin', '*')
+    res.set('access-control-allow-headers', '*')
+    res.set('access-control-allow-methods', '*')
+    next()
+}
+
+const tipoConteudo = (req: Request, res: Response, next: NextFunction): void => {
+    res.type('json')
+    next()
+}
+
+const servidor = express()
+servidor.use(bodyParser.json())
+servidor.use(cors)
+servidor.use(tipoConteudo)
+
+const app = new App(
+    new PrismaUserRepo(),
+    new PrismaBikeRepo(),
+    new PrismaRentRepo()
+)
+
+servidor.post('/api/usuarios', async (req, res) => {
+    try {
+        const id = await app.registrarUsuario(req.body)
+        res.status(201).json({ id })
+    } catch (e) {
+        if (e instanceof DuplicateUserError) {
+            res.status(400).json({
+                message: 'Não foi possível registrar o usuário.'
+            })
+            return
+        }
+        res.status(500).json({
+            message: 'Erro interno no servidor.'
+        })
+    }
+})
+
+servidor.post('/api/bicicletas', async (req, res) => {
+    try {
+        const id = await app.registrarBicicleta(req.body);
+        res.status(201).json({ id });
+    } catch (e) {
+        console.error(e.message);
+        res.status(500).json({ message: 'Erro interno no servidor.' });
+    }
+});
+
+const porta = 3000
+servidor.listen(porta, () => {
+    console.log(`Servidor ouvindo na porta ${porta}`)
+})
+
+export default servidor
